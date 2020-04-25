@@ -1,0 +1,10 @@
+{
+  "namespaces": {
+    "include": ["picstories.comics", "picstories.pages"],
+    "mapping":
+    {
+      "picstories.comics": "picstories_comics.comics",
+      "picstories.pages" : "picstories_pages.pages"
+    }
+  }
+}

@@ -1,0 +1,90 @@
+version: '3'
+networks:
+  kafka-net:
+    driver: bridge
+volumes:
+  esdata:
+    driver: local
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.1
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+    networks:
+      - kafka-net
+  mongo:
+    image: mongo
+    container_name: mongo-db
+    restart: always
+    networks:
+      - kafka-net
+    entrypoint: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
+    ports:
+      - '27017:27017'
+  zookeeper-server:
+    image: 'wurstmeister/zookeeper:latest'
+    container_name: zookeeper
+    networks:
+      - kafka-net
+    ports:
+      - '2181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka-server:
+    image: 'wurstmeister/kafka:latest'
+    container_name: kafka
+    ports:
+      - '9092:9092'
+    networks:
+      - kafka-net
+    environment:
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_LISTENERS: PLAINTEXT://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-server:2181
+      KAFKA_CREATE_TOPICS_SEPARATOR: "$$'\n'"
+      KAFKA_CREATE_TOPICS: |
+        parse-comic-task:1:1
+         update-comic-task:1:1
+    depends_on:
+      - zookeeper-server
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.6.1
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    links:
+      - elasticsearch:elasticsearch
+    networks:
+      - kafka-net
+  mongosetup:
+    image: mongo
+    container_name: mongosetup
+    depends_on:
+      - mongo
+    volumes:
+      - './mongo-setup:/scripts'
+    networks:
+      - kafka-net
+    restart: "no"
+    entrypoint: [ "bash", "/scripts/mongo_setup.sh"]
+  mongoconnector:
+    restart: always
+    build: ./mongoconnector
+    container_name: mongoconnector
+    command: mongo-connector -m mongo:27017 -t elasticsearch:9200 -d elastic2_doc_manager -c /conf/config.json
+    depends_on:
+      - mongo
+      - elasticsearch
+    networks:
+      - kafka-net

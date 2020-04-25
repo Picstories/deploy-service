@@ -88,3 +88,88 @@ services:
       - elasticsearch
     networks:
       - kafka-net
+
+  # ------------------------------------------------- SPRINGS SERVICES ------------------------------------------------#
+
+  configuration-service:
+    restart: always
+    image: picstories/picstories-configuration:virusmaster
+    container_name: configuration-service
+    networks:
+      - kafka-net
+    depends_on:
+      - mongosetup
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "10"
+    ports:
+      - '9090:9090'
+
+  gateway-setvice:
+    restart: always
+    image: picstories/gateway-service:virusmaster
+    container_name: gateway-service
+    networks:
+      - kafka-net
+    depends_on:
+      - configuration-service
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "10"
+    ports:
+      - '7000:7000'
+
+  api-service:
+    restart: always
+    image: picstories/picstories-api:virusmaster
+    container_name: api-service
+    networks:
+      - kafka-net
+    depends_on:
+      - gateway-setvice
+      - configuration-service
+      - elasticsearch
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "10"
+    ports:
+      - '7001:7001'
+
+  parsers-manager-service:
+    restart: always
+    image: picstories/parsers-manager:virusmaster
+    container_name: parsers-manager
+    networks:
+      - kafka-net
+    depends_on:
+      - configuration-service
+      - kafka-server
+      - zookeeper-server
+      - elasticsearch
+      - mongo
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "10"
+    ports:
+      - '7003:7003'
+
+  comics-parsers-service:
+    restart: always
+    image: picstories/picstories-parsers:virusmaster
+    container_name: comics-parsers-service
+    networks:
+      - kafka-net
+    depends_on:
+      - configuration-service
+      - kafka-server
+      - zookeeper-server
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "10"
+    ports:
+      - '7002:7002'

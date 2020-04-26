@@ -154,6 +154,8 @@ services:
       - mongo
     links:
       - elasticsearch:elasticsearch
+      - kafka-server:kafka-server
+      - configuration-service:configuration-service
     logging:
       options:
         max-size: "10m"
@@ -175,5 +177,8 @@ services:
       options:
         max-size: "10m"
         max-file: "10"
+    links:
+      - kafka-server:kafka-server
+      - configuration-service:configuration-service
     ports:
       - '7002:7002'

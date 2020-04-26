@@ -128,7 +128,7 @@ services:
     networks:
       - kafka-net
     depends_on:
-      - gateway-setvice
+      - gateway-service
       - configuration-service
       - elasticsearch
     logging:

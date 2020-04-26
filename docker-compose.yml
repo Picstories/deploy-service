@@ -106,7 +106,7 @@ services:
     ports:
       - '9090:9090'
 
-  gateway-setvice:
+  gateway-service:
     restart: always
     image: picstories/gateway-service:virusmaster
     container_name: gateway-service
